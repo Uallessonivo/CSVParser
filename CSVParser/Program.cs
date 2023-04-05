@@ -15,7 +15,7 @@ public class CsvRecords
     public string? Colaborador { get; set; }
 }
 
-public class CsvHeader : ClassMap<CsvRecords>
+public sealed class CsvHeader : ClassMap<CsvRecords>
 {
     public CsvHeader()
     {
@@ -44,17 +44,16 @@ internal class Program
 
         foreach (var row in dataSet.Tables[0].Rows.Cast<DataRow>().Skip(1))
         {
-            if (string.IsNullOrEmpty(row[1]?.ToString()) || string.IsNullOrEmpty(row[2]?.ToString()))
-            {
-                continue;
-            }
+            // Need to verify why is returning two columns with '0'
 
             records.Add(new CsvRecords
             {
                 Serial = long.Parse((string)row[1]),
-                Cpf = long.Parse(row[2].ToString().Replace(".", "").Replace("-", "")),
+                Cpf = long.Parse(row[2].ToString()
+                    .Replace(".", "")
+                    .Replace("-", "")),
                 Valor = "",
-                Colaborador = row[3].ToString()
+                Colaborador = row[3].ToString().Substring(0, Math.Min(row[3].ToString().Length, 35))
             });
         }
 
@@ -72,8 +71,7 @@ internal class Program
         });
 
         csv.Context.RegisterClassMap<CsvHeader>();
-        csv.WriteHeader<CsvRecords>();
-        csv.WriteRecords(new[] {new CsvRecords()});
+        csv.WriteRecords(new[] { new CsvRecords() });
         csv.WriteRecords(records);
     }
 }
